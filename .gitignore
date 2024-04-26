@@ -1,8 +1,8 @@
 # Ignore compiled binaries and executables
-./*.exe
-./*.dll
-./*.so
-./*.dylib
+*.exe
+*.dll
+*.so
+*.dylib
 
 # Ignore build artifacts and temporary files
 ./build/
