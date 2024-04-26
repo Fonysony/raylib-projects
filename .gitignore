@@ -1,0 +1,25 @@
+# Ignore compiled binaries and executables
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Ignore build artifacts and temporary files
+./build/
+./dist/
+./node_modules/
+./.cache/
+.DS_Store
+
+# Ignore IDE-specific files
+.idea/
+.vscode/
+
+# Ignore logs and backups
+*.log
+*.bak
+
+# Ignore package manager lock files
+package-lock.json
+yarn.lock
+
