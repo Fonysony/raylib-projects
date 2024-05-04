@@ -11,7 +11,7 @@
 #define GAMEWIDTH 5
 #define GAMEHEIGHT 5
 #define GAMECOUNT GAMEWIDTH*GAMEHEIGHT
-#define BOMBCOUNT 1
+#define BOMBCOUNT 8
 
 typedef struct Tile {
    int x;
@@ -27,6 +27,8 @@ int randomNumber(int min, int max);
 Tile * createMap(Tile *tiles, int bombAmount);
 Tile * createBombs(int bombAmount);
 int vertPosToIndex(Vector2 tile);
+int getAdjecntTiles(Tile adjcentTiles[8], Tile clickedTile);
+
 
 
 Tile *tilesData;
@@ -42,7 +44,7 @@ int randomNumber(int min, int max)
    srand(time(NULL) * getpid() * ++randCount);
    int randNum = (rand() % max + min);
 
-   return (int)randNum;
+   return randNum;
 }
 
 Tile * getTileData(const char *fileName)
@@ -88,15 +90,57 @@ Tile * createMap(Tile *tiles, int bombAmount)
 
 Tile * createBombs(int bombAmount)
 {
+   if (bombAmount > GAMECOUNT) 
+   {
+      printf("ERROR: BOMBCOUNT %i > GAMETILES %i\n", BOMBCOUNT, GAMECOUNT);
+      return NULL;
+   }
    Tile *bombArray = calloc(bombAmount, sizeof(Tile));
    
    Vector2 firstBomb = { randomNumber(0, GAMEWIDTH), randomNumber(0, GAMEHEIGHT) };
-   int test = vertPosToIndex(firstBomb);
-   printf("CREATED BOMB AT X: %f, Y: %f, gameTiles[%i]\n", firstBomb.x, firstBomb.y, test);
-   gameTiles[test].isBomb = true;
-   bombArray[0] = gameTiles[test];
-   
+   int firstBombID = vertPosToIndex(firstBomb);
+   gameTiles[firstBombID].isBomb = true;
+   gameTiles[firstBombID].index = 2;
+   bombArray[0] = gameTiles[firstBombID];
+
    // ALGO for finding position for new mines
+   
+   int createdBombs = 1;
+
+   for (int i = 1; i < bombAmount; i++)
+   {
+      bool isBombCreated = false;
+      bool match = false;
+      Vector2 newBombPos;
+      int newBombID;
+
+      while(!isBombCreated)
+      {
+         newBombPos.x = randomNumber(0, GAMEWIDTH);
+         newBombPos.y = randomNumber(0, GAMEHEIGHT);
+         newBombID = vertPosToIndex(newBombPos);
+
+         bool match = false;
+
+         for (int j = 0; j < createdBombs; j++)
+         {
+            if (newBombPos.x == bombArray[j].x && newBombPos.y == bombArray[j].y && newBombID == bombArray[j].id)
+            {
+               match = true;
+               break;
+            }
+         }
+         if (match) continue;
+         isBombCreated = true;
+
+      }               
+      gameTiles[newBombID].isBomb = true;
+      gameTiles[newBombID].index = 2;
+      bombArray[i] = gameTiles[newBombID];             
+      createdBombs++;
+
+   }
+
 
    return bombArray;
 }
@@ -149,7 +193,7 @@ Vector2 screenToWorld(Vector2 screenPos)
    return pos;
 }
 
-int getAdjecntTiles(Tile adjcentTiles[8], Tile clickedTile, Tile *gameTiles)
+int getAdjecntTiles(Tile adjcentTiles[8], Tile clickedTile)
 {
    int count = 0;
    for (int y = -1; y < 2; y++)
@@ -161,11 +205,8 @@ int getAdjecntTiles(Tile adjcentTiles[8], Tile clickedTile, Tile *gameTiles)
          if (newTilePos.x >= 0 && newTilePos.x < GAMEWIDTH && newTilePos.y >= 0 && newTilePos.y < GAMECOUNT)
          {
             int tileIndex = vertPosToIndex(newTilePos);
-            printf("Tile index: %i\n", tileIndex);
-            // Tile adjTile = gameTiles[];
             if (tileIndex >= 0 && tileIndex < GAMECOUNT)
             {
-               printf("TILE INDEX GO -> %i\n", tileIndex);
                adjcentTiles[count] = gameTiles[tileIndex];
                count++;
             }
@@ -189,7 +230,11 @@ int main(void)
 
    gameTiles = createMap(tilesData, 10);
    bombTiles = createBombs(BOMBCOUNT);
-   printf("Bomb %i: x: %i, y: %i, isBomb: %b\n", 0, bombTiles[0].x, bombTiles[0].y, bombTiles[0].isBomb);
+
+   for (int i = 0; i < BOMBCOUNT; i++)
+   {
+      printf("Bomb %i: x: %i, y: %i, id: %i, isBomb: %b\n", i, bombTiles[i].x, bombTiles[i].y, bombTiles[i].id, bombTiles[i].isBomb);
+   }
 
    int clicks = 0;
 
@@ -208,7 +253,7 @@ int main(void)
             int tileIndex = vertPosToIndex(pos);
             Tile *tileClicked = &gameTiles[tileIndex];
             Tile adjTiles[8];
-            int adjSize = getAdjecntTiles(adjTiles, *tileClicked, gameTiles);
+            int adjSize = getAdjecntTiles(adjTiles, *tileClicked);
             printf("adjTiles Size: %i\n", adjSize);
 
             if (gameTiles[tileIndex].index == 0)
